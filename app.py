@@ -92,7 +92,7 @@ class Show(db.Model):
   start_time = db.Column(db.String(120))
   # default=datetime.utcnow
   def __repr__(self):
-      return f"<Venue id={self.id} name={self.artist_id} city={self.venue_id} state={self.start_time}>"
+      return f"<Show id={self.id} name={self.artist_id} city={self.venue_id} state_time={self.start_time}>"
 
 
 #----------------------------------------------------------------------------#
@@ -206,44 +206,46 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
-  venue = Venue.query.filter_by(id=venue_id).first()
-  list_of_shows_in_venue = Show.query.filter_by(venue_id=venue_id).all()
+  list_of_shows_venue = db.session.query(Venue, Show).join(Show).filter(Venue.id==venue_id).all()
+
+  # venue = Venue.query.filter_by(id=venue_id).first()
+  # list_of_shows_in_venue = Show.query.filter_by(venue_id=venue_id).all()
   past_shows = []
   upcoming_shows =[]
   today = datetime.now() - timedelta(days=0)
   
-  for show in list_of_shows_in_venue:
-    time = parser.parse(show.start_time)
+  for show in list_of_shows_venue:
+    time = parser.parse(show.Show.start_time)
     if time.replace(tzinfo=None) < today.replace(tzinfo=None):
       past_show = {
-        "artist_id": show.artist.id,
-        "artist_name": show.artist.name,
-        "artist_image_link": show.artist.image_link,
-        "start_time": show.start_time
+        "artist_id": show.Show.artist.id,
+        "artist_name": show.Show.artist.name,
+        "artist_image_link": show.Show.artist.image_link,
+        "start_time": show.Show.start_time
       }
       past_shows.append(past_show)
     else:
       upcoming_show = {
-        "artist_id": show.artist.id,
-        "artist_name": show.artist.name,
-        "artist_image_link": show.artist.image_link,
-        "start_time": show.start_time
+        "artist_id": show.Show.artist.id,
+        "artist_name": show.Show.artist.name,
+        "artist_image_link": show.Show.artist.image_link,
+        "start_time": show.Show.start_time
       }
       upcoming_shows.append(upcoming_show)
 
   venuedata ={
-    "id": venue.id,
-    "name": venue.name,
-    "genres": list(venue.genres.split(",")),
-    "address": venue.address,
-    "city": venue.city,
-    "state": venue.state,
-    "phone": venue.phone,
-    "website": venue.website,
-    "facebook_link": venue.facebook_link,
-    "seeking_talent": venue.seeking_talent,
-    "seeking_description": venue.seeking_description,
-    "image_link": venue.image_link,
+    "id": list_of_shows_venue[0].Venue.id,
+    "name": list_of_shows_venue[0].Venue.name,
+    "genres": list(list_of_shows_venue[0].Venue.genres.split(",")),
+    "address": list_of_shows_venue[0].Venue.address,
+    "city": list_of_shows_venue[0].Venue.city,
+    "state": list_of_shows_venue[0].Venue.state,
+    "phone": list_of_shows_venue[0].Venue.phone,
+    "website": list_of_shows_venue[0].Venue.website,
+    "facebook_link": list_of_shows_venue[0].Venue.facebook_link,
+    "seeking_talent": list_of_shows_venue[0].Venue.seeking_talent,
+    "seeking_description": list_of_shows_venue[0].Venue.seeking_description,
+    "image_link": list_of_shows_venue[0].Venue.image_link,
     "past_shows": past_shows,
     "past_shows_count": len(past_shows),
     "upcoming_shows": upcoming_shows,
@@ -376,6 +378,7 @@ def search_artists():
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
   # TODO: replace with real artist data from the artist table, using artist_id
+  list_of_shows_artist = db.session.query(Artist, Show).join(Show).filter(Artist.id==artist_id).all()
   artist = Artist.query.filter_by(id=artist_id).first()
 
   list_of_shows_by_artist = Show.query.filter_by(artist_id=artist_id).all()
@@ -383,22 +386,22 @@ def show_artist(artist_id):
   upcoming_shows =[]
   today = datetime.now() - timedelta(days=0)
   
-  for show in list_of_shows_by_artist:
-    time = parser.parse(show.start_time)
+  for show in list_of_shows_artist:
+    time = parser.parse(show.Show.start_time)
     if time.replace(tzinfo=None) < today.replace(tzinfo=None):
       past_show = {
-        "venue_id": show.venue.id,
-        "venue_name": show.venue.name,
-        "venue_image_link": show.venue.image_link,
-        "start_time": show.start_time
+        "venue_id": show.Show.venue.id,
+        "venue_name": show.Show.venue.name,
+        "venue_image_link": show.Show.venue.image_link,
+        "start_time": show.Show.start_time
       }
       past_shows.append(past_show)
     else:
       upcoming_show = {
-        "venue_id": show.venue.id,
-        "venue_name": show.venue.name,
-        "venue_image_link": show.venue.image_link,
-        "start_time": show.start_time
+        "venue_id": show.Show.venue.id,
+        "venue_name": show.Show.venue.name,
+        "venue_image_link": show.Show.venue.image_link,
+        "start_time": show.Show.start_time
       }
       upcoming_shows.append(upcoming_show)
   artistdata ={
