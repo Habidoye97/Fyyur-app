@@ -17,6 +17,7 @@ from flask_migrate import Migrate
 from datetime import datetime
 from datetime import timedelta
 from dateutil import parser
+from models import Venue, Show, Artist, db
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -24,76 +25,18 @@ from dateutil import parser
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
-db = SQLAlchemy(app)
+db.init_app(app)
+app.app_context().push()
+
+
 
 # TODO: connect to a local postgresql database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:mayowa1997@localhost:5432/fyyurapp'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-migrate = Migrate(app, db)
 
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-class Venue(db.Model):
-    __tablename__ = 'Venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    website = db.Column(db.String())
-    seeking_talent = db.Column(db.Boolean, default=False)
-    seeking_description = db.Column(db.String())
-    genres = db.Column(db.String(120))
-
-    shows = db.relationship('Show', backref='venue', lazy=False, cascade='all, delete-orphan')
-
-    def __repr___(self):
-      return f'<Venue id={self.id} name={self.name} city={self.city} state={self.state}>'
-
-class Artist(db.Model):
-    __tablename__ = 'Artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    website_link = db.Column(db.String())
-    facebook_link = db.Column(db.String(120))
-    seeking_venue = db.Column(db.Boolean, default=False)
-    seeking_description = db.Column(db.String())
     
-    shows = db.relationship('Show', backref='artist', lazy=False, cascade='all, delete-orphan')
-
-    def __repr__(self):
-      return f"<Artist id={self.id} name={self.name} city={self.city} state={self.state}>"
-
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-class Show(db.Model):
-  __tablename__= 'show'
-  
-  id = db.Column(db.Integer, primary_key=True)
-  artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
-  venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
-  start_time = db.Column(db.String(120))
-  # default=datetime.utcnow
-  def __repr__(self):
-      return f"<Show id={self.id} name={self.artist_id} city={self.venue_id} state_time={self.start_time}>"
-
+migrate = Migrate(app, db)
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -208,7 +151,7 @@ def show_venue(venue_id):
   # TODO: replace with real venue data from the venues table, using venue_id
   list_of_shows_venue = db.session.query(Venue, Show).join(Show).filter(Venue.id==venue_id).all()
 
-  # venue = Venue.query.filter_by(id=venue_id).first()
+  venue = Venue.query.filter_by(id=venue_id).first()
   # list_of_shows_in_venue = Show.query.filter_by(venue_id=venue_id).all()
   past_shows = []
   upcoming_shows =[]
@@ -234,18 +177,18 @@ def show_venue(venue_id):
       upcoming_shows.append(upcoming_show)
 
   venuedata ={
-    "id": list_of_shows_venue[0].Venue.id,
-    "name": list_of_shows_venue[0].Venue.name,
-    "genres": list(list_of_shows_venue[0].Venue.genres.split(",")),
-    "address": list_of_shows_venue[0].Venue.address,
-    "city": list_of_shows_venue[0].Venue.city,
-    "state": list_of_shows_venue[0].Venue.state,
-    "phone": list_of_shows_venue[0].Venue.phone,
-    "website": list_of_shows_venue[0].Venue.website,
-    "facebook_link": list_of_shows_venue[0].Venue.facebook_link,
-    "seeking_talent": list_of_shows_venue[0].Venue.seeking_talent,
-    "seeking_description": list_of_shows_venue[0].Venue.seeking_description,
-    "image_link": list_of_shows_venue[0].Venue.image_link,
+    "id": venue.id,
+    "name": venue.name,
+    "genres": list(venue.genres.split(",")),
+    "address": venue.address,
+    "city": venue.city,
+    "state": venue.state,
+    "phone": venue.phone,
+    "website": venue.website,
+    "facebook_link": venue.facebook_link,
+    "seeking_talent": venue.seeking_talent,
+    "seeking_description": venue.seeking_description,
+    "image_link": venue.image_link,
     "past_shows": past_shows,
     "past_shows_count": len(past_shows),
     "upcoming_shows": upcoming_shows,
